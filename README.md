@@ -1,5 +1,5 @@
 wr-port-blocker
----------------
+===============
 
 Small utility for enabling/disabling a port of the WR Switch
 if a WR Node connected the switch is not flashed with a defined 
@@ -13,17 +13,35 @@ The utility can get the information from whichever network topology
 builder. In this case, the utility, gets the information from LLDP 
 daemon, but other methods can be implemented.
 
-REQUERIMENTS
-------------
-- wrpc-sw >$(VERSION) 
-- DHCP server
-- LLDP server
+BUILDING AND INSTALLING
+-----------------------
+## From Source Code
 
-CONFIGURATION
--------------
+```
+git clone https://github.com/bradomyn/wr-port-blocker.git
+cd wr-port-blocker
+make 
+make install
+```
+
+Dependencies: libssh
+
+## From AUR Archlinux
+
+## From RPM 
+
+SYSTEM REQUERIMENTS
+-------------------
+- Nodes flashed with a wrpc-sw >$(VERSION) 
+- DHCP server 
+- LLDP server 
+
+SYSTEM CONFIGURATION
+--------------------
 The configuration file is /etc/wr-port-blocker.conf and the
 parameters are:
 
+```
 #wrpc-sw version string
 wrpc-sw-v=""
 
@@ -39,5 +57,5 @@ timeout-port=1
 #Logging information, local or syslog
 logging=syslog
 syslog-ip=192.168.1.1
-
+```
 
