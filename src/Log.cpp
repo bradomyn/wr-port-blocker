@@ -1,9 +1,9 @@
 #include <iostream>
 #include "Log.h"
 
-LogLevel level = LOG_ERROR;
-
-void SetLoggingLevel(LogLevel l) { level = l; }
+void SetLoggingLevel(int l) { 
+    level = (LogLevel_t)l; 
+}
 
 void LogInfo(std::string msg) {
     if(level >= LOG_INFO)

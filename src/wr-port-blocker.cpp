@@ -3,6 +3,9 @@
 #include <vector>
 #include "Conf.h"
 #include "Log.h"
+#include "Daemonize.h"
+
+LogLevel_t level = LOG_ERROR;
 
 static void show_usage(std::string name)
 {
@@ -57,6 +60,7 @@ int main(int argc, char* argv[])
     } else
         LogInfo("Config File loaded correctly");
     
+    //Daemonize();
     //block = BlockerEngine(Conf);
     //
  

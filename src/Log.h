@@ -1,11 +1,11 @@
 #ifndef Log
 #define Log
 
-enum LogLevel { LOG_QUIET, LOG_ERROR, LOG_INFO, LOG_DEBUG };
+typedef enum LogLevel { LOG_QUIET = 1, LOG_ERROR, LOG_INFO, LOG_DEBUG } LogLevel_t;
 
-extern LogLevel level;
+extern LogLevel_t level;
 
-void SetLoggingLevel(LogLevel);
+void SetLoggingLevel(int l);
 void LogInfo(std::string msg);
 void LogDebug(std::string msg);
 void LogError(std::string msg);
