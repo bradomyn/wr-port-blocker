@@ -1,5 +1,5 @@
-#ifndef Conf_H
-#define Conf_H
+#ifndef CONF_H
+#define CONF_H
 #include <ios>
 #include <sstream>
 #include <fstream>
@@ -8,7 +8,8 @@
 #include <map>
 #include "Log.h"
 
-class Conf {
+class Conf
+{
 
     public:
         Conf(std::string config_file);
@@ -22,12 +23,12 @@ class Conf {
         std::string dhcp_log;
         int firm_check_rate;
         int time_out_port;
-        int CloseConf();        
-        std::map<std::string, std::string> config_map = {{"firm-check-rate",""}, 
-                                                        {"timeout-port",""}, 
-                                                        {"logging",""}, 
-                                                        {"ip-syslog",""}, 
-                                                        {"wrpcsw", ""}, 
+        int CloseConf();
+        std::map<std::string, std::string> config_map = {{"firm-check-rate",""},
+                                                        {"timeout-port",""},
+                                                        {"logging",""},
+                                                        {"ip-syslog",""},
+                                                        {"wrpcsw", ""},
                                                         {"dhcp-log", ""}};
 };
 #endif
