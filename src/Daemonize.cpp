@@ -1,4 +1,5 @@
 #include "Daemonize.h"
+#include "Log.h"
 
 void Daemonize()
 {
@@ -8,16 +9,22 @@ void Daemonize()
     pid = fork();
 
     /* An error occurred */
-    if (pid < 0)
+    if (pid < 0) {
+        LogError("Daemonize: PID Error");
         exit(EXIT_FAILURE);
+    }
 
     /* Success: Let the parent terminate */
-    if (pid > 0)
+    if (pid > 0) {
+        LogInfo("Daemonize: PID Created");
         exit(EXIT_SUCCESS);
+    }
 
     /* On success: The child process becomes session leader */
-    if (setsid() < 0)
+    if (setsid() < 0) {
+        LogError("Daemonize: SETSID Error");
         exit(EXIT_FAILURE);
+    }
 
     /* Catch, ignore and handle signals */
     //TODO: Implement a working signal handler */
@@ -28,12 +35,16 @@ void Daemonize()
     pid = fork();
 
     /* An error occurred */
-    if (pid < 0)
+    if (pid < 0) {
+        LogError("Daemonize: SETSID Error");
         exit(EXIT_FAILURE);
+    }
 
     /* Success: Let the parent terminate */
-    if (pid > 0)
+    if (pid > 0) {
+        LogInfo("Daemonize: Parent terminate - PID Created");
         exit(EXIT_SUCCESS);
+    }
 
     /* Set new file permissions */
     umask(0);

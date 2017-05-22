@@ -1,7 +1,10 @@
 #ifndef Log
 #define Log
 
-typedef enum LogLevel { LOG_QUIET = 1, LOG_ERROR, LOG_INFO, LOG_DEBUG } LogLevel_t;
+#include <iostream>
+#include <string>
+
+typedef enum LogLevels { LOG_QUIET = 1, LOG_ERROR, LOG_MSG, LOG_DBG } LogLevel_t;
 
 extern LogLevel_t level;
 

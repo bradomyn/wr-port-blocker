@@ -14,19 +14,22 @@ static void show_usage(std::string name)
               << "\t-h,--help\tShow this help message\n"
               << "\t-v,\t\tinfo verbosity level\n"
               << "\t-vv,\t\tdebug verbosity level\n"
+              << "\t-d \t\t daemonize"
               << "\t-c,--config  CONFIGFILE Specify path to config file\n"
               << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
+
+    std::vector <std::string> sources;
+    std::string config_file;
+    int daemonize=0;
+
     if (argc < 1) {
         show_usage(argv[0]);
         return 1;
     }
-
-    std::vector <std::string> sources;
-    std::string config_file;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -39,30 +42,40 @@ int main(int argc, char* argv[])
             } else {
                 LogError("--config option requires one argument.");
                 return 1;
-            }  
+            }
+        } else if (arg == "-d") {
+            LogInfo("Deamonize");
+            daemonize = 1;
         } else if (arg == "-vv") {
-            SetLoggingLevel(LOG_DEBUG);
+            SetLoggingLevel(LOG_DBG);
             LogDebug("Verbosity Level: Debug");
         } else if (arg == "-v") {
-            SetLoggingLevel(LOG_INFO);
+            SetLoggingLevel(LOG_MSG);
             LogInfo("Verbosity Level: Info");
         }else {
             sources.push_back(argv[i]);
         }
     }
-    
-    
-    // init 
+
+
+    // init
     Conf Conf(config_file);
     if (Conf.GetConf() < 0) {
         LogError("Without Config information, I don't start, Ciao");
         return -1;
     } else
         LogInfo("Config File loaded correctly");
-    
-    //Daemonize();
+
+    if (daemonize)
+        Daemonize();
+
+    while(1)
+    {
+        LogInfo("working");
+    }
+
     //block = BlockerEngine(Conf);
     //
- 
+
     return 0;
 }
