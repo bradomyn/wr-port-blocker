@@ -1,38 +1,44 @@
 #include "Conf.h"
 
-Conf::Conf(std::string Conf_file)
+Conf::Conf(std::string ConfFile)
 {
-        if (!Conf_file.empty())
-                Conf_p = Conf_file;
+        if (!ConfFile.empty())
+                ConfP = ConfFile;
 }
 
 int Conf::CloseConf()
 {
-        Conf_f.close();
+        ConfF.close();
         return 0;
 }
 
 int Conf::GetConf()
 {
-        Conf_f.open(Conf_p); //open in constructor
+        ConfF.open(ConfP); //open in constructor
+        size_t ParamIdx;
+        std::string Param;
+        std::string Value;
 
-        if (Conf_f) {
+        if (ConfF) {
                 std::string str = "";
-                while (std::getline(Conf_f, str, '='))
+                while (std::getline(ConfF, str))
                 {
-                        if (config_map.find(std::string(str)) != config_map.end())
-                        {
-                                std::string value="";
-                                if( std::getline(Conf_f, value) )
+                        if (str.at(0) != '#') { // it is not a comment line
+
+                                ParamIdx = str.find('=');
+                                Param = str.substr(0,ParamIdx);
+                                if (ConfigMap.find(std::string(Param)) != ConfigMap.end())
                                 {
-                                        config_map[str] = value;
+                                        Value=str.substr(ParamIdx+1,str.size());
+                                        ConfigMap[Param] = Value;
+                                        LogDebug("Config Parameter:\t" + Param + "=" + Value);
                                 }
                         }
                 }
-
+                LogInfo("Config File " + ConfP + " loaded correctly");
         }
         else {
-                LogError("Config File " + Conf_p + " not found");
+                LogError("Config File " + ConfP + " not found");
                 return (-1);
         }
         CloseConf();
