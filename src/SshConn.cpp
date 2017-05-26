@@ -1,6 +1,6 @@
 #include "SshConn.h"
 
-SshConn::SshConn(LogLevel_t DebugLevel)
+SshConn::SshConn(int DebugLevel)
 {
 
         int port = 22;
@@ -12,6 +12,12 @@ SshConn::SshConn(LogLevel_t DebugLevel)
                 int verbosity = SSH_LOG_PROTOCOL;
                 ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
         }
+}
+
+SshConn::~SshConn()
+{
+        ssh_disconnect(session);
+        ssh_free(session);
 }
 
 int SshConn::Config()
@@ -69,13 +75,13 @@ int SshConn::Config()
         return 0;
 }
 
-int SshConn::SendCommand()
+int SshConn::SendCommand(const char* command)
 {
         int rc;
         char buffer[250];
         int nbytes;
 
-        rc = ssh_channel_request_exec(channel, "ls");
+        rc = ssh_channel_request_exec(channel, command);
         if (rc != SSH_OK)
         {
                 ssh_channel_close(channel);
@@ -171,3 +177,5 @@ int SshConn::VerifyKnownHost(ssh_session session)
         free(hash);
         return 0;
 }
+
+Conn *ConnProto = new SshConn(3);
