@@ -7,7 +7,7 @@
 #include "Conn.h"
 #include "Log.h"
 
-class SshConn : public Conn
+class SshConn : public Conn, public Log
 {
         public:
                 SshConn(int DebugLevel);
@@ -18,7 +18,7 @@ class SshConn : public Conn
         private:
                 int VerifyKnownHost(ssh_session session);
 
-                ssh_channel channel ;
-                ssh_session session ;
+                ssh_channel channel;
+                ssh_session session;
 };
 #endif

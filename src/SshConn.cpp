@@ -1,6 +1,6 @@
 #include "SshConn.h"
 
-SshConn::SshConn(int DebugLevel)
+SshConn::SshConn(int DebugLevel) : Log(DebugLevel)
 {
 
         int port = 22;
