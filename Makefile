@@ -1,11 +1,11 @@
 CC = gcc
 CXX=g++
+PREFIX=/usr
 SRC_DIR=src
 CFLAGS = -Wall -g -std=c++11
-INCLUDES = -I./$(SRC_DIR) 
-LFLAGS = 
-LIBS = 
-
+INCLUDES = -I./$(SRC_DIR)
+LDFLAGS = 
+LIBS = -L$(PREFIX)/lib -lssh -L/usr/local/lib -llldpctl
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:.c=.o)
 MAIN = wr-port-blocker
@@ -15,7 +15,7 @@ MAIN = wr-port-blocker
 all:    $(MAIN)
 
 $(MAIN): $(OBJS) 
-	$(CXX) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+	$(CXX) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LDFLAGS) $(LIBS)
 
 .c.o:
 	$(CXX) $(CFLAGS) $(INCLUDES) -c $<  -o $@
