@@ -1,6 +1,6 @@
-#include "DhcpSan.h"
+#include "DhcpScan.h"
 
-DhcpScan::DhcpScan(std::map<std::string, std::string> &ConfigMap)
+DhcpScan::DhcpScan(std::map<std::string, std::string> &ConfigMap, int LogLevel) : Log(LogLevel)
 {
         Version = ConfigMap["wrpcsw"];
         DhcpP = ConfigMap["dhcp-log"];
@@ -44,9 +44,7 @@ int DhcpScan::CloseDhcpLog()
 void DhcpScan::ShowBlackList(std::map<std::string, std::time_t> &BlackList)
 {
         for(std::map<std::string, std::time_t>::iterator it = BlackList.begin(); it != BlackList.end(); ++it)
-        {
-                std::cout << it->first << " " << it->second << std::endl;
-        }
+                LogInfo("Node with wrong Firmware version: " + std::string(it->first));
 }
 
 int DhcpScan::ScanDhcpLog(std::map<std::string, std::time_t>  &BlackList)
