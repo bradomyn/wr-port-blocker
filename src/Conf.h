@@ -8,11 +8,11 @@
 #include <map>
 #include "Log.h"
 
-class Conf
+class Conf : public Log
 {
 
     public:
-        Conf(std::string config_file);
+        Conf(std::string config_file, int LogLevel);
         int GetConf();
         std::map<std::string, std::string> ConfigMap = {{"firm-check-rate",""},
                                                         {"timeout-port",""},

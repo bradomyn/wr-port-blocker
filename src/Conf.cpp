@@ -1,6 +1,7 @@
 #include "Conf.h"
 
-Conf::Conf(std::string ConfFile)
+Conf::Conf(std::string ConfFile, int LogLevel)
+        : Log(LogLevel)
 {
         if (!ConfFile.empty())
                 ConfP = ConfFile;
