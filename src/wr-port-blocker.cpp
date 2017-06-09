@@ -5,8 +5,8 @@
 #include "Log.h"
 #include "Daemonize.h"
 #include "SshConn.h"
-
-LogLevel_t level = LOG_ERROR;
+#include "DhcpScan.h"
+#include "Lldp.h"
 
 static void show_usage(std::string name)
 {
@@ -25,6 +25,9 @@ int main(int argc, char* argv[])
 
         std::vector <std::string> sources;
         std::string config_file;
+        Log Log(LOG_ERROR);
+        int level = LOG_ERROR;
+
         int daemonize=0;
 
         if (argc < 1) {
@@ -41,18 +44,20 @@ int main(int argc, char* argv[])
                         if (i + 1 < argc) {
                                 config_file = argv[i+1];
                         } else {
-                                LogError("--config option requires one argument.");
+                                Log.LogError("--config option requires one argument.");
                                 return 1;
                         }
                 } else if (arg == "-d") {
-                        LogInfo("Deamonize");
+                        Log.LogInfo("Deamonize");
                         daemonize = 1;
                 } else if (arg == "-vv") {
-                        SetLoggingLevel(LOG_DBG);
-                        LogDebug("Verbosity Level: Debug");
+                        Log.SetLoggingLevel(LOG_DBG);
+                        Log.LogDebug("Verbosity Level: Debug");
+                        level = LOG_DBG;
                 } else if (arg == "-v") {
-                        SetLoggingLevel(LOG_MSG);
-                        LogInfo("Verbosity Level: Info");
+                        Log.SetLoggingLevel(LOG_MSG);
+                        Log.LogInfo("Verbosity Level: Info");
+                        level = LOG_MSG;
                 }else {
                         sources.push_back(argv[i]);
                 }
@@ -60,19 +65,32 @@ int main(int argc, char* argv[])
 
 
         // init
-        Conf Conf(config_file);
+        Conf Conf(config_file, level);
         if (Conf.GetConf() < 0) {
-                LogError("Without Config information, I don't start, Ciao");
+                Log.LogError("Without Config information, I don't start, Ciao");
                 return -1;
-        } else
-                LogInfo("Config File loaded correctly");
+        }
 
         if (daemonize)
                 Daemonize();
+        // blocker engine
+        //while(1) {
+
+                //Blocker.run();
+
+        //}
 
         SshConn SshConn(level);
-        SshConn.Config();
-        SshConn.SendCommand();
+        Lldp Lldp(level);
+        Lldp.GetLldp();
+        //SshConn.Config();
+        //SshConn.SendCommand("ls");
+        DhcpScan scan(Conf.ConfigMap, level);
+        scan.OpenDhcpLog();
+        std::map<std::string, std::time_t> BlackList;
+        scan.ScanDhcpLog(BlackList);
+        scan.ShowBlackList(BlackList);
+        scan.CloseDhcpLog();
 
         return 0;
 }
