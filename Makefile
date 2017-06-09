@@ -5,7 +5,7 @@ SRC_DIR=src
 CFLAGS = -Wall -g
 INCLUDES = -I./$(SRC_DIR)
 LDFLAGS = 
-LIBS = -L$(PREFIX)/lib -lssh
+LIBS = -L$(PREFIX)/lib -lssh -L/usr/local/lib -llldpctl
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:.c=.o)
 MAIN = wr-port-blocker
