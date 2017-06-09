@@ -1,7 +1,7 @@
 CC = gcc
 CXX=g++
 SRC_DIR=src
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -std=c++11
 INCLUDES = -I./$(SRC_DIR) 
 LFLAGS = 
 LIBS = 
