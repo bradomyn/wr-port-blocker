@@ -5,5 +5,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <syslog.h>
+#include "Log.h"
 
 void Daemonize();

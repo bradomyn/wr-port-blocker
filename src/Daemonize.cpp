@@ -1,28 +1,28 @@
 #include "Daemonize.h"
-#include "Log.h"
 
 void Daemonize()
 {
     pid_t pid;
+    Log Log(LOG_MSG);
 
     /* Fork off the parent process */
     pid = fork();
 
     /* An error occurred */
     if (pid < 0) {
-        LogError("Daemonize: PID Error");
+        Log.LogError("Daemonize: PID Error");
         exit(EXIT_FAILURE);
     }
 
     /* Success: Let the parent terminate */
     if (pid > 0) {
-        LogInfo("Daemonize: PID Created");
+        Log.LogInfo("Daemonize: PID Created");
         exit(EXIT_SUCCESS);
     }
 
     /* On success: The child process becomes session leader */
     if (setsid() < 0) {
-        LogError("Daemonize: SETSID Error");
+        Log.LogError("Daemonize: SETSID Error");
         exit(EXIT_FAILURE);
     }
 
@@ -36,13 +36,13 @@ void Daemonize()
 
     /* An error occurred */
     if (pid < 0) {
-        LogError("Daemonize: SETSID Error");
+        Log.LogError("Daemonize: SETSID Error");
         exit(EXIT_FAILURE);
     }
 
     /* Success: Let the parent terminate */
     if (pid > 0) {
-        LogInfo("Daemonize: Parent terminate - PID Created");
+        Log.LogInfo("Daemonize: Parent terminate - PID Created");
         exit(EXIT_SUCCESS);
     }
 
