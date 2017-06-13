@@ -7,6 +7,8 @@
 #include <map>
 #include <ctime>
 #include <lldpctl.h>
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
 #include "Log.h"
 
 class Lldp : public Log
@@ -15,6 +17,7 @@ class Lldp : public Log
                 Lldp(int DebugLevel);
                 ~Lldp();
                 int GetLldp(void);
+                int GetNodesInSwitch();
                 void ShowSwitch(void);
                 //lldpctl_send_callback send(lldpctl_conn_t *conn, const uint8_t *data, size_t length, void *user_data);
         private:
