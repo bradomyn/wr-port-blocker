@@ -23,21 +23,21 @@ int Lldp::GetNodesInSwitch()
 
         struct variable_list *vars;
         int status;
-        char ip[] = "192.168.20.51";
+        char ip[] = "192.168.20.64";
         unsigned char pub[] = "public";
 
         init_snmp("snmpapp");
 
         snmp_sess_init( &session );                   /* set up defaults */
-        session.peername = strdup(ip);
+        session.peername = ip;
 
         /* set the SNMP version number */
         session.version = SNMP_VERSION_1;
 
         /* set the SNMPv1 community name used for authentication */
         session.community = pub;
-        //session.community_len = strlen(session.community);
-        session.community_len = 6;
+        session.community_len = strlen((const char*)session.community);
+        //session.community_len = 6;
 
         /* set the SNMP version number */
         //session.version=SNMP_VERSION_3;
@@ -94,7 +94,6 @@ int Lldp::GetNodesInSwitch()
 
         snmp_add_null_var(pdu, anOID, anOID_len);
         status = snmp_synch_response(ss, pdu, &response);
-
 
         if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
                 for(vars = response->variables; vars; vars = vars->next_variable)
