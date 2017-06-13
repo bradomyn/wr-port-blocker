@@ -1,0 +1,33 @@
+Install
+
+Debian packages
+
+xml2 snmp snmpd libsnmp-dev  libxml2-dev snmp-mibs-downloader libjson-perl
+libjansson4 libjansson-dev libssh-dev 
+
+sudo download-mibs 
+
+
+
+install lldpd
+-------------
+
+git clone https://github.com/vincentbernat/lldpd.git
+
+git checkout 0.9.4
+
+./autogen.sh
+
+./configure \
+  --prefix=/usr \
+  --sysconfdir=/etc \
+  --sbindir=/usr/bin \
+  --with-snmp \
+  --with-xml \
+  --with-json \
+  --with-readline \
+  --with-privsep-user=lldpd \
+  --with-privsep-group=lldpd \
+  --with-privsep-chroot=/run/lldpd/chroot \
+  --with-lldpd-ctl-socket=/run/lldpd/socket \
+  --with-lldpd-pid-file=/run/lldpd/pid
