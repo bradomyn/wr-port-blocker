@@ -44,14 +44,14 @@ int DhcpScan::CloseDhcpLog()
 void DhcpScan::ShowBlackList(std::map<std::string, std::time_t> &BlackList)
 {
         for(std::map<std::string, std::time_t>::iterator it = BlackList.begin(); it != BlackList.end(); ++it)
-                LogInfo("Node with wrong Firmware version: " + std::string(it->first));
+                LogInfo("Node not register in the DHCP server: " + std::string(it->first));
 }
 
 int DhcpScan::ScanDhcpLog(std::map<std::string, std::time_t>  &BlackList)
 {
         std::string str="";
         std::string VersionNode;
-        std::string Mac;
+        std::string Mac="";
         std::time_t Ts = std::time(NULL);
         std::size_t NoIpIdx;
 
@@ -62,8 +62,8 @@ int DhcpScan::ScanDhcpLog(std::map<std::string, std::time_t>  &BlackList)
                         if (CompareDate(LastLogTime, Ts)) {
                                 NoIpIdx = str.find("no address available");
                                 if (NoIpIdx != std::string::npos) {
-                                        Mac = str.substr(NoIpIdx - MAC_INIT, NoIpIdx - 1);
-                                        LogInfo("Node " + Mac + "no register");
+                                        Mac = str.substr(NoIpIdx - MAC_INIT, MAC_LEN);
+                                        LogDebug("Node " + Mac + " no register");
                                         BlackList[Mac] = Ts;
                                 }
 

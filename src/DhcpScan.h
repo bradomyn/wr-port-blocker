@@ -15,7 +15,7 @@
 //#define MAC_INIT        73
 //#define MAC_END         90
 #define MAC_INIT        18
-#define MAC_END         17
+#define MAC_LEN         17
 
 class DhcpScan : public Log
 {
