@@ -12,8 +12,10 @@
 
 #define VENDOR_INIT     14
 #define VENDOR_END      32
-#define MAC_INIT        73
-#define MAC_END         90
+//#define MAC_INIT        73
+//#define MAC_END         90
+#define MAC_INIT        18
+#define MAC_END         17
 
 class DhcpScan : public Log
 {

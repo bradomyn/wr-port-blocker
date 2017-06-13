@@ -53,24 +53,32 @@ int DhcpScan::ScanDhcpLog(std::map<std::string, std::time_t>  &BlackList)
         std::string VersionNode;
         std::string Mac;
         std::time_t Ts = std::time(NULL);
-        std::size_t VendorIdx;
+        std::size_t NoIpIdx;
 
         if (DhcpF) {
                 while (std::getline(DhcpF, str))
                 {
                         Ts = ConvertTS(str.substr(0,15));
                         if (CompareDate(LastLogTime, Ts)) {
-                                VendorIdx = str.find("vendor class:");
-                                if(VendorIdx != std::string::npos) {
-                                        VersionNode = str.substr(VendorIdx + VENDOR_INIT , VendorIdx + VENDOR_END);
-                                        if (VersionNode.compare(Version) != 0) {
-                                                std::getline(DhcpF, str); // laziness, next line is with only info
-                                                std::getline(DhcpF, str); // in this line we have IP and MAC
-                                                Mac = str.substr(MAC_INIT , MAC_END);
-                                                LogInfo("Node " + Mac + "with wrong firmware: " + VersionNode);
-                                                BlackList[Mac] = Ts;
-                                        }
+                                NoIpIdx = str.find("no address available");
+                                if (NoIpIdx != std::string::npos) {
+                                        Mac = str.substr(NoIpIdx - MAC_INIT, NoIpIdx - 1);
+                                        LogInfo("Node " + Mac + "no register");
+                                        BlackList[Mac] = Ts;
                                 }
+
+                                //std::size_t VendorIdx;
+                                //VendorIdx = str.find("vendor class:");
+                                //if (VendorIdx != std::string::npos) {
+                                //        VersionNode = str.substr(VendorIdx + VENDOR_INIT , VendorIdx + VENDOR_END);
+                                //        if (VersionNode.compare(Version) != 0) {
+                                //                std::getline(DhcpF, str); // laziness, next line is with only info
+                                //                std::getline(DhcpF, str); // in this line we have IP and MAC
+                                //                Mac = str.substr(MAC_INIT , MAC_END);
+                                //                LogInfo("Node " + Mac + "with wrong firmware: " + VersionNode);
+                                //                BlackList[Mac] = Ts;
+                                //        }
+                                //}
                         }
                 }
 
