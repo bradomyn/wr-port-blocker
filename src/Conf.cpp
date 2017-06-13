@@ -1,16 +1,23 @@
 #include "Conf.h"
 
-Conf::Conf(std::string ConfFile, int LogLevel)
+Conf::Conf(std::string ConfFile, int LogLevel, int Sim)
         : Log(LogLevel)
 {
         if (!ConfFile.empty())
                 ConfP = ConfFile;
+
+        Simulate = Sim;
 }
 
 int Conf::CloseConf()
 {
         ConfF.close();
         return 0;
+}
+
+int Conf::GetSim()
+{
+        return Simulate;
 }
 
 int Conf::GetConf()
