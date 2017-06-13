@@ -21,6 +21,7 @@ int Lldp::GetLldp(void)
         lldpctl_atom_t *mgmt;
         char *user_data = NULL;
         const char *port_num;
+        std::time_t Ts = std::time(nullptr);
 
         ctlname = lldpctl_get_default_transport();
         conn = lldpctl_new_name(ctlname, NULL, NULL, user_data);
@@ -32,8 +33,7 @@ int Lldp::GetLldp(void)
 
         LogInfo("LLDP: Started liblldp and connected to lldpd daemon");
 
-        lldpctl_atom_t *chassis = lldpctl_get_local_chassis(conn);
-        std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_id_subtype) << std::endl;
+        //lldpctl_atom_t *chassis = lldpctl_get_local_chassis(conn);
         lldpctl_atom_t *iface, *ifaces;
 
         ifaces = lldpctl_get_interfaces(conn);
@@ -48,12 +48,14 @@ int Lldp::GetLldp(void)
                         lldpctl_atom_t *chassis = lldpctl_atom_get(neighbor, lldpctl_k_port_chassis);
                         port_num =  lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index);
                         if (port_num != NULL) {
-                                std::cout << lldpctl_atom_get_str(iface, lldpctl_k_interface_name) << std::endl;
-                                std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index) << std::endl;
-                                std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name) << std::endl;
+                                //std::cout << lldpctl_atom_get_str(iface, lldpctl_k_interface_name) << std::endl;
+                                //std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index) << std::endl;
+                                //std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name) << std::endl;
                                 mgmts = lldpctl_atom_get(chassis, lldpctl_k_chassis_mgmt);
                                 lldpctl_atom_foreach(mgmts, mgmt) {
-                                        std::cout << lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip) << std::endl;
+                                        //std::cout << lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip) << std::endl;
+                                        std::localtime(&Ts);
+                                        SwitchList[lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip)] = Ts;
                                 }
                        }
                 }
@@ -63,4 +65,10 @@ int Lldp::GetLldp(void)
         lldpctl_atom_dec_ref(ifaces);
 
         return 0;
+}
+
+void Lldp::ShowSwitch()
+{
+        for(std::map<std::string, std::time_t>::iterator it = SwitchList.begin(); it != SwitchList.end(); ++it)
+                LogInfo("WR Switches in Network: " + std::string(it->first));
 }
