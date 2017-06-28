@@ -1,23 +1,18 @@
 #include "Lldp.h"
 
-#define NETSNMP_DS_WALK_INCLUDE_REQUESTED	        1
-#define NETSNMP_DS_WALK_PRINT_STATISTICS	        2
-#define NETSNMP_DS_WALK_DONT_CHECK_LEXICOGRAPHIC	3
-#define NETSNMP_DS_WALK_TIME_RESULTS     	        4
-#define NETSNMP_DS_WALK_DONT_GET_REQUESTED	        5
-#define NETSNMP_DS_WALK_TIME_RESULTS_SINGLE	        6
-
 Lldp::Lldp(int DebugLevel) : Log(DebugLevel)
 {
-
+        init_snmp("snmpapp");
+        snmp_sess_init( &session );                   /* set up defaults */
+        SnmpDebug = DebugLevel;
 }
 
 Lldp::~Lldp()
 {
-
+        snmp_close(ss);
 }
 
-void Lldp::snmp_get_and_print(netsnmp_session * ss, oid * theoid, size_t theoid_len, int pdu_t)
+void Lldp::GetFirstOID(netsnmp_session * ss, oid * theoid, size_t theoid_len, int pdu_t)
 {
     netsnmp_pdu    *pdu, *response;
     netsnmp_variable_list *vars;
@@ -30,24 +25,20 @@ void Lldp::snmp_get_and_print(netsnmp_session * ss, oid * theoid, size_t theoid_
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
         for (vars = response->variables; vars; vars = vars->next_variable) {
             numprinted++;
-            print_variable(vars->name, vars->name_length, vars);
+            if(SnmpDebug >= LOG_DBG)
+                print_variable(vars->name, vars->name_length, vars);
         }
     }
     if (response) {
         snmp_free_pdu(response);
     }
-    std::cout << "step 2" << std::endl;
 }
 
 
 int Lldp::GetNodesInSwitch()
 {
-
-        netsnmp_session session;
-        netsnmp_session *ss;
         netsnmp_pdu *pdu;
         netsnmp_pdu *response;
-        //const char *our_v3_passphrase = "The UCD Demo Password";
 
         oid anOID[MAX_OID_LEN];
         oid end_OID[MAX_OID_LEN];
@@ -56,7 +47,7 @@ int Lldp::GetNodesInSwitch()
         size_t end_len;
         size_t next_len;
         int count;
-        struct timeval  tv_a, tv_b;
+        struct timeval tv_a, tv_b;
 
         struct variable_list *vars;
         int status;
@@ -65,9 +56,6 @@ int Lldp::GetNodesInSwitch()
         char ip[] = "192.168.20.64";
         unsigned char pub[] = "public";
 
-        init_snmp("snmpapp");
-
-        snmp_sess_init( &session );                   /* set up defaults */
         session.peername = ip;
 
         /* set the SNMP version number */
@@ -77,13 +65,10 @@ int Lldp::GetNodesInSwitch()
         session.community = pub;
         session.community_len = strlen((const char*)session.community);
 
-        std::cout << "step 1" << std::endl;
-
-
         anOID_len = MAX_OID_LEN;
 
-        if (!snmp_parse_oid("iso.0.8802.1.1.2.1.4.1.1.5", anOID, &anOID_len)) {
-                snmp_perror(".1.3.6.1.2.1.1.1.0");
+        if (!snmp_parse_oid(LldpOIDMac.c_str(), anOID, &anOID_len)) {
+                snmp_perror(LldpOIDMac.c_str());
                 return -1;
         }
 
@@ -99,121 +84,105 @@ int Lldp::GetNodesInSwitch()
         ss = snmp_open(&session);
 
         if (ss == NULL) {
-                snmp_perror("ack");
-                snmp_log(LOG_ERR, "something horrible happened!!!\n");
+                LogError("SNMP: No session open, something horrible happened!!!\n");
                 return -1;
         }
 
-        check =
-        !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID,
-                        NETSNMP_DS_WALK_DONT_CHECK_LEXICOGRAPHIC);
+        check = !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID,
+                                        NETSNMP_DS_WALK_DONT_CHECK_LEXICOGRAPHIC);
 
-        snmp_get_and_print(ss, anOID, anOID_len, SNMP_MSG_GET);
-
-        //if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_INCLUDE_REQUESTED)) {
-        //        snmp_get_and_print(ss, anOID, anOID_len);
-        //}
-
+        GetFirstOID(ss, anOID, anOID_len, SNMP_MSG_GET);
 
         running = 1;
 
         while(running) {
+
                 pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
                 snmp_add_null_var(pdu, next_OID, next_len);
 
-                /*
-                 * do the request
-                 */
                 if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_TIME_RESULTS_SINGLE))
-                    netsnmp_get_monotonic_clock(&tv_a);
+                        netsnmp_get_monotonic_clock(&tv_a);
+
                 status = snmp_synch_response(ss, pdu, &response);
+
                 if (status == STAT_SUCCESS) {
-                    if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_TIME_RESULTS_SINGLE))
-                        netsnmp_get_monotonic_clock(&tv_b);
-                    if (response->errstat == SNMP_ERR_NOERROR) {
-                        /*
-                         * check resulting variables
-                         */
-                        for (vars = response->variables; vars;
-                             vars = vars->next_variable) {
-                            if (snmp_oid_compare(end_OID, end_len,
-                                                 vars->name, vars->name_length) <= 0) {
-                                /*
-                                 * not part of this subtree
-                                 */
-                                running = 0;
-                                continue;
-                            }
-                            numprinted++;
-                            if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_TIME_RESULTS_SINGLE))
-                                fprintf(stdout, "%f s: ",
-                                        (double) (tv_b.tv_usec - tv_a.tv_usec)/1000000 +
-                                        (double) (tv_b.tv_sec - tv_a.tv_sec));
-                            print_variable(vars->name, vars->name_length, vars);
-                            if ((vars->type != SNMP_ENDOFMIBVIEW) &&
-                                (vars->type != SNMP_NOSUCHOBJECT) &&
-                                (vars->type != SNMP_NOSUCHINSTANCE)) {
-                                /*
-                                 * not an exception value
-                                 */
-                                if (check
-                                    && snmp_oid_compare(next_OID, next_len,
-                                                        vars->name,
-                                                        vars->name_length) >= 0) {
-                                    fprintf(stderr, "Error: OID not increasing: ");
-                                    fprint_objid(stderr, next_OID, next_len);
-                                    fprintf(stderr, " >= ");
-                                    fprint_objid(stderr, vars->name,
-                                                 vars->name_length);
-                                    fprintf(stderr, "\n");
-                                    running = 0;
+
+                        if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_TIME_RESULTS_SINGLE)) {
+                                netsnmp_get_monotonic_clock(&tv_b);
+                        }
+
+                        if (response->errstat == SNMP_ERR_NOERROR) {
+                                for (vars = response->variables; vars; vars = vars->next_variable) {
+
+                                        if (snmp_oid_compare(end_OID, end_len, vars->name, vars->name_length) <= 0) {
+                                                running = 0;
+                                                continue;
+                                        }
+
+                                        numprinted++;
+
+                                        if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_WALK_TIME_RESULTS_SINGLE)) {
+                                                if(SnmpDebug >= LOG_DBG)
+                                                        fprintf(stdout, "%f s: ",
+                                                                (double) (tv_b.tv_usec - tv_a.tv_usec)/1000000 +
+                                                                (double) (tv_b.tv_sec - tv_a.tv_sec));
+                                        }
+                                        printf("Integer #%lx \n", be64toh(*vars->val.integer));
+                                        printf("Integer #%lx \n", *vars->val.integer);
+
+                                        if(SnmpDebug >= LOG_DBG)
+                                                print_variable(vars->name, vars->name_length, vars);
+
+                                        if ((vars->type != SNMP_ENDOFMIBVIEW) &&
+                                                        (vars->type != SNMP_NOSUCHOBJECT) &&
+                                                        (vars->type != SNMP_NOSUCHINSTANCE)) {
+                                                if (check && snmp_oid_compare(next_OID, next_len,
+                                                                        vars->name,
+                                                                        vars->name_length) >= 0) {
+                                                        if(SnmpDebug >= LOG_DBG) {
+                                                                fprintf(stderr, "Error: OID not increasing: ");
+                                                                fprint_objid(stderr, next_OID, next_len);
+                                                                fprintf(stderr, " >= ");
+                                                                fprint_objid(stderr, vars->name, vars->name_length);
+                                                                fprintf(stderr, "\n");
+                                                        }
+                                                        running = 0;
+                                                }
+                                                memmove((char *) next_OID, (char *) vars->name,
+                                                                vars->name_length * sizeof(oid));
+                                                next_len = vars->name_length;
+                                        } else
+                                                running = 0;
                                 }
-                                memmove((char *) next_OID, (char *) vars->name,
-                                        vars->name_length * sizeof(oid));
-                                next_len = vars->name_length;
-                            } else
-                                /*
-                                 * an exception value, so stop
-                                 */
-                                running = 0;
-                        }
-                    } else {
-                        /*
-                         * error in response, print it
-                         */
-                        running = 0;
-                        if (response->errstat == SNMP_ERR_NOSUCHNAME) {
-                            printf("End of MIB\n");
                         } else {
-                            fprintf(stderr, "Error in packet.\nReason: %s\n",
-                                    snmp_errstring(response->errstat));
-                            if (response->errindex != 0) {
-                                fprintf(stderr, "Failed object: ");
-                                for (count = 1, vars = response->variables;
-                                     vars && count != response->errindex;
-                                     vars = vars->next_variable, count++)
-                                    /*EMPTY*/;
-                                if (vars)
-                                    fprint_objid(stderr, vars->name,
-                                                 vars->name_length);
-                                fprintf(stderr, "\n");
-                            }
+                                running = 0;
+                                if (response->errstat == SNMP_ERR_NOSUCHNAME) {
+                                        LogDebug("SNMP: End of MIB");
+                                } else {
+                                        LogError("SNMP: Error in packet. Reason: " +
+                                                  std::string(snmp_errstring(response->errstat)));
+                                        if (response->errindex != 0) {
+                                                LogError("SNMP: Failed object: ");
+                                                for (count = 1, vars = response->variables;
+                                                                vars && count != response->errindex;
+                                                                vars = vars->next_variable, count++)
+                                                if (vars)
+                                                        if(SnmpDebug >= LOG_DBG) {
+                                                        fprint_objid(stderr, vars->name,
+                                                                        vars->name_length);
+                                                        }
+                                        }
+                                }
                         }
-                    }
                 } else if (status == STAT_TIMEOUT) {
-                    fprintf(stderr, "Timeout: No Response from %s\n",
-                            session.peername);
-                    running = 0;
-                } else {                /* status == STAT_ERROR */
-                    snmp_sess_perror("snmpwapp", ss);
-                    running = 0;
+                        LogError("SNMP: Timeout No Response");
+                        running = 0;
+                } else {
+                        running = 0;
                 }
                 if (response)
-                    snmp_free_pdu(response);
+                        snmp_free_pdu(response);
         }
-
-        snmp_close(ss);
-
         return 0;
 }
 
