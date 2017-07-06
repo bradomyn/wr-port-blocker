@@ -127,11 +127,29 @@ int Lldp::GetNodesInSwitch()
                                                                 (double) (tv_b.tv_usec - tv_a.tv_usec)/1000000 +
                                                                 (double) (tv_b.tv_sec - tv_a.tv_sec));
                                         }
-                                        printf("Integer #%lx \n", be64toh(*vars->val.integer));
-                                        printf("Integer #%lx \n", *vars->val.integer);
+
+                                        //for (int t=0; t <= MAX_OID_LEN; t = t + 1)
+                                        for (unsigned int t=0; t < vars->name_length; t = t + 1)
+                                                printf("%lu ",vars->name_loc[t]);
+                                                // printf("%lu ",vars->val.objid[t]);
+
+                                        printf("\n");
+                                        printf("Mac ");
+
+                                        for (int t=0; t <= 40; t = t + 8) {
+                                                printf("%lx :",(*vars->val.integer & (0xFFL << t)) >> t);
+                                        }
+
+                                        printf("\n");
+                                       //printf("Integer #%lx \n", *vars->val.integer);
+                                       //PRINTF("Integer #%lx \n", be64toh(*vars->val.integer));
 
                                         if(SnmpDebug >= LOG_DBG)
                                                 print_variable(vars->name, vars->name_length, vars);
+
+                                        printf("\n");
+                                        printf("\n");
+                                        printf("\n");
 
                                         if ((vars->type != SNMP_ENDOFMIBVIEW) &&
                                                         (vars->type != SNMP_NOSUCHOBJECT) &&
