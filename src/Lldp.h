@@ -7,6 +7,7 @@
 #include <map>
 #include <ctime>
 #include <lldpctl.h>
+#include <sstream>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <stdexcept>
@@ -20,7 +21,7 @@
 #define NETSNMP_DS_WALK_TIME_RESULTS_SINGLE	        6
 
 
-typedef std::map<std::string, std::string> NodePortMap;
+typedef std::map<std::string, unsigned> NodePortMap;
 
 class Lldp : public Log
 {

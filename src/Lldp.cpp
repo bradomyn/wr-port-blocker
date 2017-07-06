@@ -132,27 +132,29 @@ NodePortMap Lldp::GetNodesInSwitch(std::string &WRSwitch)
                                                                 (double) (tv_b.tv_sec - tv_a.tv_sec));
                                         }
 
-                                        for (unsigned int t=0; t < vars->name_length; t = t + 1)
-                                                printf("%lu ",vars->name_loc[t]);
+                                        unsigned SwitchPort = vars->name_loc[vars->name_length - 2] - 2;
 
+                                        if( SwitchPort != 0) {
 
-                                        printf("\n");
+                                                std::string Mac;
+                                                char MacText[4];
+                                                unsigned long MacHex;
 
-                                        printf("Port %lu ",vars->name_loc[vars->name_length - 2] - 2);
+                                                for (int t=0; t <= 40; t = t + 8) {
+                                                        MacHex = ((*vars->val.integer & (0xFFL << t)) >> t);
+                                                        sprintf(MacText,"%02lx",MacHex);
+                                                        Mac.append(MacText);
+                                                        if (t + 8 <= 40)
+                                                                Mac.append(":");
+                                                }
 
-                                        printf("\n");
-                                        printf("Mac ");
+                                                LogInfo("\t WR Node: " + Mac + " in port:" + std::to_string(SwitchPort));
 
-                                        for (int t=0; t <= 40; t = t + 8) {
-                                                printf("%lx :",(*vars->val.integer & (0xFFL << t)) >> t);
+                                                NodePort[Mac] = SwitchPort;
+
+                                                if(SnmpDebug >= LOG_DBG)
+                                                        print_variable(vars->name, vars->name_length, vars);
                                         }
-
-                                        printf("\n");
-                                        printf("\n");
-                                        printf("\n");
-                                        printf("\n");
-                                        //if(SnmpDebug >= LOG_DBG)
-                                        //        print_variable(vars->name, vars->name_length, vars);
 
                                         if ((vars->type != SNMP_ENDOFMIBVIEW) &&
                                                         (vars->type != SNMP_NOSUCHOBJECT) &&
@@ -248,8 +250,9 @@ int Lldp::GetLldp(void)
                                 std::string Chassis(lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name));
                                 std::string Interface(lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
                                 std::string Index(lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
+                                std::string Mac(lldpctl_atom_get_str(chassis, lldpctl_k_chassis_id));
 
-                                LogDebug("Device: " + Chassis + " with interface: " + Interface + " and index: " + Index);
+                                LogDebug("Device: " + Chassis + " with interface: " + Interface + " and index: " + Index + " MAC:" + Mac);
 
                                 mgmts = lldpctl_atom_get(chassis, lldpctl_k_chassis_mgmt);
 
@@ -280,6 +283,11 @@ int Lldp::GetLldp(void)
 
 void Lldp::ShowSwitch()
 {
-        //for(std::map<std::string, std::time_t>::iterator it = SwitchNode.begin(); it != SwitchNode.end(); ++it)
-        //        LogInfo("WR Switches in Network: " + std::string(it->first));
+        for(auto const &ent1 : SwitchNode) {
+                LogDebug("WR Switches in Network: " + std::string(ent1.first));
+                NodePortMap Nodes = ent1.second;
+
+                for(auto const &ent2 : Nodes)
+                        LogDebug("\t|-->in Port: " + std::to_string(ent2.second) + " Node: " + std::string(ent2.first));
+        }
 }
