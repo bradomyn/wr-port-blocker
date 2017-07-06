@@ -3,7 +3,7 @@
 Lldp::Lldp(int DebugLevel) : Log(DebugLevel)
 {
         init_snmp("snmpapp");
-        snmp_sess_init( &session );                   /* set up defaults */
+        snmp_sess_init( &session );
         SnmpDebug = DebugLevel;
 }
 
@@ -22,6 +22,7 @@ void Lldp::GetFirstOID(netsnmp_session * ss, oid * theoid, size_t theoid_len, in
     snmp_add_null_var(pdu, theoid, theoid_len);
 
     status = snmp_synch_response(ss, pdu, &response);
+
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
         for (vars = response->variables; vars; vars = vars->next_variable) {
             numprinted++;
@@ -29,16 +30,18 @@ void Lldp::GetFirstOID(netsnmp_session * ss, oid * theoid, size_t theoid_len, in
                 print_variable(vars->name, vars->name_length, vars);
         }
     }
+
     if (response) {
         snmp_free_pdu(response);
     }
 }
 
 
-int Lldp::GetNodesInSwitch()
+NodePortMap Lldp::GetNodesInSwitch(std::string &WRSwitch)
 {
         netsnmp_pdu *pdu;
         netsnmp_pdu *response;
+        NodePortMap NodePort;
 
         oid anOID[MAX_OID_LEN];
         oid end_OID[MAX_OID_LEN];
@@ -53,9 +56,11 @@ int Lldp::GetNodesInSwitch()
         int status;
         int check;
         int running;
-        char ip[] = "192.168.20.64";
+        char ip[16];
         unsigned char pub[] = "public";
 
+        strncpy(ip, WRSwitch.c_str(), sizeof(ip));
+        ip[sizeof(ip) - 1] = 0;
         session.peername = ip;
 
         /* set the SNMP version number */
@@ -68,9 +73,9 @@ int Lldp::GetNodesInSwitch()
         anOID_len = MAX_OID_LEN;
 
         if (!snmp_parse_oid(LldpOIDMac.c_str(), anOID, &anOID_len)) {
-                snmp_perror(LldpOIDMac.c_str());
-                return -1;
+                throw std::runtime_error(LldpOIDMac.c_str());
         }
+
 
         memmove(next_OID, anOID, anOID_len * sizeof(oid));
         next_len = anOID_len;
@@ -84,8 +89,7 @@ int Lldp::GetNodesInSwitch()
         ss = snmp_open(&session);
 
         if (ss == NULL) {
-                LogError("SNMP: No session open, something horrible happened!!!\n");
-                return -1;
+                throw std::runtime_error("No session open, something horrible happened!!!");
         }
 
         check = !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID,
@@ -128,10 +132,13 @@ int Lldp::GetNodesInSwitch()
                                                                 (double) (tv_b.tv_sec - tv_a.tv_sec));
                                         }
 
-                                        //for (int t=0; t <= MAX_OID_LEN; t = t + 1)
                                         for (unsigned int t=0; t < vars->name_length; t = t + 1)
                                                 printf("%lu ",vars->name_loc[t]);
-                                                // printf("%lu ",vars->val.objid[t]);
+
+
+                                        printf("\n");
+
+                                        printf("Port %lu ",vars->name_loc[vars->name_length - 2] - 2);
 
                                         printf("\n");
                                         printf("Mac ");
@@ -141,15 +148,11 @@ int Lldp::GetNodesInSwitch()
                                         }
 
                                         printf("\n");
-                                       //printf("Integer #%lx \n", *vars->val.integer);
-                                       //PRINTF("Integer #%lx \n", be64toh(*vars->val.integer));
-
-                                        if(SnmpDebug >= LOG_DBG)
-                                                print_variable(vars->name, vars->name_length, vars);
-
                                         printf("\n");
                                         printf("\n");
                                         printf("\n");
+                                        //if(SnmpDebug >= LOG_DBG)
+                                        //        print_variable(vars->name, vars->name_length, vars);
 
                                         if ((vars->type != SNMP_ENDOFMIBVIEW) &&
                                                         (vars->type != SNMP_NOSUCHOBJECT) &&
@@ -177,31 +180,33 @@ int Lldp::GetNodesInSwitch()
                                 if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                                         LogDebug("SNMP: End of MIB");
                                 } else {
-                                        LogError("SNMP: Error in packet. Reason: " +
-                                                  std::string(snmp_errstring(response->errstat)));
-                                        if (response->errindex != 0) {
+                                       if (response->errindex != 0) {
                                                 LogError("SNMP: Failed object: ");
                                                 for (count = 1, vars = response->variables;
                                                                 vars && count != response->errindex;
                                                                 vars = vars->next_variable, count++)
                                                 if (vars)
                                                         if(SnmpDebug >= LOG_DBG) {
-                                                        fprint_objid(stderr, vars->name,
+                                                                fprint_objid(stderr, vars->name,
                                                                         vars->name_length);
                                                         }
                                         }
+                                        throw std::runtime_error("Error in packet. Reason: " +
+                                                                  std::string(snmp_errstring(response->errstat)));
                                 }
                         }
                 } else if (status == STAT_TIMEOUT) {
-                        LogError("SNMP: Timeout No Response");
                         running = 0;
+                        throw std::runtime_error("Timeout No Response");
                 } else {
                         running = 0;
                 }
+
                 if (response)
                         snmp_free_pdu(response);
         }
-        return 0;
+
+        return NodePort;
 }
 
 int Lldp::GetLldp(void)
@@ -215,7 +220,6 @@ int Lldp::GetLldp(void)
         lldpctl_atom_t *mgmt;
         char *user_data = NULL;
         const char *port_num;
-        std::time_t Ts = std::time(nullptr);
 
         ctlname = lldpctl_get_default_transport();
         conn = lldpctl_new_name(ctlname, NULL, NULL, user_data);
@@ -227,13 +231,12 @@ int Lldp::GetLldp(void)
 
         LogInfo("LLDP: Started liblldp and connected to lldpd daemon");
 
-        //lldpctl_atom_t *chassis = lldpctl_get_local_chassis(conn);
         lldpctl_atom_t *iface, *ifaces;
 
         ifaces = lldpctl_get_interfaces(conn);
 
         if (ifaces == NULL)
-                std::cout << "LLDP: NULL iface list" << std::endl;
+                LogDebug("LLDP: NULL iface list");
 
         lldpctl_atom_foreach(ifaces, iface) {
                 port = lldpctl_get_port(iface);
@@ -242,29 +245,41 @@ int Lldp::GetLldp(void)
                         lldpctl_atom_t *chassis = lldpctl_atom_get(neighbor, lldpctl_k_port_chassis);
                         port_num =  lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index);
                         if (port_num != NULL) {
-                                //std::cout << lldpctl_atom_get_str(iface, lldpctl_k_interface_name) << std::endl;
-                                //std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index) << std::endl;
-                                //std::cout << lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name) << std::endl;
+                                std::string Chassis(lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name));
+                                std::string Interface(lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
+                                std::string Index(lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
+
+                                LogDebug("Device: " + Chassis + " with interface: " + Interface + " and index: " + Index);
+
                                 mgmts = lldpctl_atom_get(chassis, lldpctl_k_chassis_mgmt);
+
                                 lldpctl_atom_foreach(mgmts, mgmt) {
-                                        //std::cout << lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip) << std::endl;
-                                        std::localtime(&Ts);
-                                        SwitchList[lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip)] = Ts;
+                                        std::string SwitchIp(lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip));
+                                        std::string WRSwitch("nwt");
+                                        if (Chassis.find(WRSwitch) != std::string::npos) {
+                                                LogInfo(Chassis + " is a WR Device IP: " + SwitchIp);
+                                                try {
+                                                        SwitchNode[SwitchIp] = GetNodesInSwitch(SwitchIp);
+                                                } catch (const std::exception& e) {
+                                                        LogError(std::string("SNMP: ") + e.what());
+                                                }
+                                        } else {
+                                                LogInfo(Chassis + " is NOT a WR Device IP: " + SwitchIp);
+                                        }
                                 }
                        }
                 }
         }
+
         lldpctl_atom_dec_ref(mgmts);
         lldpctl_atom_dec_ref(neighbors);
         lldpctl_atom_dec_ref(ifaces);
-
-        GetNodesInSwitch();
 
         return 0;
 }
 
 void Lldp::ShowSwitch()
 {
-        for(std::map<std::string, std::time_t>::iterator it = SwitchList.begin(); it != SwitchList.end(); ++it)
-                LogInfo("WR Switches in Network: " + std::string(it->first));
+        //for(std::map<std::string, std::time_t>::iterator it = SwitchNode.begin(); it != SwitchNode.end(); ++it)
+        //        LogInfo("WR Switches in Network: " + std::string(it->first));
 }
