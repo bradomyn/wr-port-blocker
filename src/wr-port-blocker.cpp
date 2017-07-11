@@ -1,12 +1,16 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include "Conf.h"
 #include "Log.h"
 #include "Daemonize.h"
 #include "SshConn.h"
 #include "DhcpScan.h"
 #include "Lldp.h"
+#include "Blocker.h"
 
 static void show_usage(std::string name)
 {
@@ -23,7 +27,7 @@ static void show_usage(std::string name)
 
 int main(int argc, char* argv[])
 {
-
+        boost::asio::io_service io;
         std::vector <std::string> sources;
         std::string config_file;
         Log Log(LOG_ERROR);
@@ -78,25 +82,22 @@ int main(int argc, char* argv[])
 
         if (daemonize)
                 Daemonize();
-        // blocker engine
-        //while(1) {
 
-                //Blocker.run();
+        Blocker Block(Conf.ConfigMap, level, io);
+        io.run();
 
-        //}
-
-        SshConn SshConn(level);
-        Lldp Lldp(level);
-        Lldp.GetLldp();
-        Lldp.ShowSwitch();
-        //SshConn.Config();
-        //SshConn.SendCommand("ls");
-        DhcpScan scan(Conf.ConfigMap, level);
-        scan.OpenDhcpLog();
-        std::map<std::string, std::time_t> BlackList;
-        scan.ScanDhcpLog(BlackList);
-        //scan.ShowBlackList(BlackList);
-        scan.CloseDhcpLog();
+        //SshConn SshConn(level);
+        //Lldp Lldp(level);
+        //Lldp.GetLldp();
+        //Lldp.ShowSwitch();
+        ////SshConn.Config();
+        ////SshConn.SendCommand("ls");
+        //DhcpScan scan(Conf.ConfigMap, level);
+        //scan.OpenDhcpLog();
+        //std::map<std::string, std::time_t> BlackList;
+        //scan.ScanDhcpLog(BlackList);
+        ////scan.ShowBlackList(BlackList);
+        //scan.CloseDhcpLog();
 
         return 0;
 }

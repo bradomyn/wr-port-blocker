@@ -5,7 +5,7 @@ SRC_DIR=src
 CFLAGS = -Wall -g -std=c++11
 INCLUDES = -I./$(SRC_DIR) -I/usr/local/include
 LDFLAGS = 
-LIBS = -L$(PREFIX)/lib -lssh -L/usr/local/lib -llldpctl -lsnmp
+LIBS = -L$(PREFIX)/lib -lssh -L/usr/local/lib -llldpctl -lsnmp -lboost_system
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:.c=.o)
 MAIN = wr-port-blocker
