@@ -24,17 +24,19 @@ make
 make install
 ```
 
-Dependencies: libssh
+Dependencies: libssh, lldpctl, netsnmp boost libraries,
 
 ## From AUR Archlinux
+pacman -S libssh lldpd net-snmp boost-libs
 
-## From RPM 
+## From RPM
+
 
 SYSTEM REQUERIMENTS
 -------------------
 - Nodes flashed with a wrpc-sw >$(VERSION) 
 - DHCP server 
-- LLDP server 
+- LLDP
 
 SYSTEM CONFIGURATION
 --------------------
